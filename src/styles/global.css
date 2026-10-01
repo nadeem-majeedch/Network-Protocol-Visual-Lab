@@ -1,0 +1,1855 @@
+/* ============================================================
+   Network Protocol Visual Lab — design system
+   Visual language: NETWORK · PACKET · PROTOCOL · ROUTING ·
+                    SIMULATION · LEARNING
+   Monospace carries protocol data; the sans face carries
+   teaching prose. Depth comes from elevation and hairlines,
+   not decoration. Every protocol owns one hue, used everywhere
+   that protocol appears.
+   ============================================================ */
+
+:root {
+  /* Surfaces (dark instrument panel) */
+  --bg: #0b0f14;
+  --bg-elev: #11161d;
+  --bg-inset: #171d26;
+  --bg-hover: #1d242f;
+  --line: #262e3a;
+  --line-strong: #364152;
+
+  /* Ink */
+  --text: #e8eef5;
+  --text-dim: #97a3b2;
+  --text-faint: #6b7684;
+
+  /* Semantic network hues */
+  --accent: #5ba7f7;          /* NETWORK — links, focus, paths   */
+  --accent-strong: #1f6feb;
+  --packet: #f4704b;          /* PACKET — moving dots, selection  */
+  --good: #46c26a;            /* delivered / success              */
+  --warn: #d9a53a;            /* ROUTING — decisions, forwarding  */
+  --bad: #ef5a52;
+
+  /* Type */
+  --sans: 'Segoe UI Variable Text', 'Segoe UI', system-ui, -apple-system, 'Helvetica Neue', sans-serif;
+  --mono: 'Cascadia Code', 'JetBrains Mono', 'SFMono-Regular', Consolas, 'Courier New', monospace;
+
+  /* Rhythm */
+  --radius: 8px;
+  --radius-sm: 5px;
+  --gap: 0.75rem;
+  --pad: 1rem;
+
+  /* Elevation */
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.35);
+  --shadow-2: 0 4px 16px rgba(0, 0, 0, 0.35);
+}
+
+/* Light theme: same semantic tokens, daylight values. */
+:root[data-theme='light'] {
+  --bg: #f4f6f9;
+  --bg-elev: #ffffff;
+  --bg-inset: #eaeef3;
+  --bg-hover: #e1e7ee;
+  --line: #d3dae2;
+  --line-strong: #b7c1cd;
+
+  --text: #1c2430;
+  --text-dim: #5a6775;
+  --text-faint: #8a95a3;
+
+  --accent: #0a67c2;
+  --accent-strong: #0550ae;
+  --packet: #c14e10;
+  --good: #17753c;
+  --warn: #946300;
+  --bad: #c9281e;
+
+  --shadow-1: 0 1px 2px rgba(16, 24, 40, 0.08);
+  --shadow-2: 0 4px 16px rgba(16, 24, 40, 0.1);
+}
+
+/* Protocol hues: one hue per protocol, reused across badges,
+   stack layers, timeline rows and inspector layers. Text on
+   badges stays dark in both themes for legibility. */
+:root {
+  --proto-ethernet: #79c0ff;
+  --proto-arp: #ffa657;
+  --proto-ipv4: #7ee787;
+  --proto-tcp: #d2a8ff;
+  --proto-udp: #f2cc60;
+  --proto-dns: #ff9bce;
+  --proto-http: #a5d6ff;
+  --proto-icmp: #ffd8a8;
+  --proto-on: #0b0f14;
+}
+
+/* Light theme deepens the same hues; dark badge text keeps ≥4.5:1
+   contrast against every mid-tone protocol color. */
+:root[data-theme='light'] {
+  --proto-ethernet: #3a9bdc;
+  --proto-arp: #e07b2c;
+  --proto-ipv4: #3d9a50;
+  --proto-tcp: #9d6bdf;
+  --proto-udp: #c09816;
+  --proto-dns: #d5609d;
+  --proto-http: #2e7fb8;
+  --proto-icmp: #d08a3a;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scrollbar-color: var(--line-strong) transparent;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--accent) 35%, transparent);
+}
+
+h1, h2, h3, h4, h5 {
+  line-height: 1.25;
+  margin: 0 0 0.5rem;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+}
+
+code, pre, kbd {
+  font-family: var(--mono);
+}
+
+.mono {
+  font-family: var(--mono);
+}
+
+/* Keyboard visibility everywhere, without mouse noise. */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 3px;
+}
+
+/* Thin, quiet scrollbars on the instrument panels. */
+.sidebar,
+.inspector-pane,
+.main,
+.timeline,
+.event-log {
+  scrollbar-width: thin;
+}
+
+/* ============================================================
+   Shell
+   ============================================================ */
+
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.6rem 1.25rem;
+  background: var(--bg-elev);
+  border-bottom: 1px solid var(--line);
+  flex-wrap: wrap;
+  position: relative;
+  z-index: 5;
+}
+
+/* The NETWORK→PACKET gradient identifies the product without
+   any extra decoration. */
+.app-header::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 0 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent), var(--packet) 55%, var(--proto-dns));
+  opacity: 0.55;
+}
+
+.app-header h1 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.app-header .accent {
+  color: var(--accent);
+}
+
+.tagline {
+  margin: 0;
+  color: var(--text-faint);
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.mode-switch {
+  margin-left: auto;
+  display: flex;
+  gap: 2px;
+  background: var(--bg-inset);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 2px;
+}
+
+.mode-switch button {
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  padding: 0.28rem 0.85rem;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.8rem;
+  border-radius: 4px;
+  transition: color 120ms ease, background 120ms ease;
+}
+
+.mode-switch button:hover {
+  color: var(--text);
+}
+
+.mode-switch button.active {
+  color: var(--text);
+  background: var(--bg-hover);
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+}
+
+/* Layout: nav rail · stage · inspector */
+.app-body {
+  display: grid;
+  grid-template-columns: 250px minmax(0, 1fr) 370px;
+  flex: 1;
+  min-height: 0;
+}
+
+.sidebar {
+  border-right: 1px solid var(--line);
+  background: var(--bg-elev);
+  overflow-y: auto;
+  position: sticky;
+  top: 0;
+  max-height: calc(100vh - 0px);
+}
+
+.main {
+  overflow-y: auto;
+  padding: 1.1rem 1.25rem 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.inspector-pane {
+  border-left: 1px solid var(--line);
+  background: var(--bg-elev);
+  overflow-y: auto;
+  position: sticky;
+  top: 0;
+  max-height: 100vh;
+}
+
+/* ============================================================
+   Lab navigation — grouped: flagship · curriculum · reference
+   ============================================================ */
+
+.lab-nav {
+  padding-bottom: 0.75rem;
+}
+
+.lab-nav h2,
+.progress-panel h3 {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--text-faint);
+  padding: 1rem 1rem 0.4rem;
+  margin: 0;
+}
+
+.lab-nav-group {
+  margin: 0.35rem 0 0;
+}
+
+.lab-nav-group + .lab-nav-group {
+  border-top: 1px solid var(--line);
+  margin-top: 0.6rem;
+  padding-top: 0.35rem;
+}
+
+.lab-nav-label {
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--text-faint);
+  padding: 0.4rem 1.1rem 0.2rem;
+  margin: 0;
+  font-weight: 600;
+}
+
+.lab-nav ul {
+  list-style: none;
+  margin: 0;
+  padding: 0.25rem 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.lab-link {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  border-left: 2px solid transparent;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  color: var(--text-dim);
+  padding: 0.4rem 0.6rem 0.4rem 0.65rem;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.82rem;
+  line-height: 1.35;
+  transition: background 100ms ease, color 100ms ease, border-color 100ms ease;
+}
+
+.lab-link:hover {
+  background: var(--bg-inset);
+  color: var(--text);
+}
+
+/* The active lab reads like a selected track in an instrument. */
+.lab-link.active {
+  background: color-mix(in srgb, var(--accent) 12%, var(--bg-inset));
+  border-left-color: var(--accent);
+  color: var(--text);
+}
+
+.lab-link .lab-done {
+  color: var(--text-faint);
+  flex: 0 0 auto;
+  font-family: var(--mono);
+  font-size: 0.75rem;
+}
+
+.lab-link .lab-done[aria-label='Completed'] {
+  color: var(--good);
+}
+
+.lab-link .lab-protocols {
+  font-family: var(--mono);
+  font-size: 0.66rem;
+  color: var(--text-faint);
+  letter-spacing: 0.03em;
+}
+
+.lab-link.active .lab-protocols {
+  color: var(--text-dim);
+}
+
+/* ============================================================
+   Stage — canvas, controls, timeline
+   ============================================================ */
+
+.stage {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  min-width: 0;
+}
+
+/* --- Canvas ------------------------------------------------ */
+
+.topology-canvas {
+  width: 100%;
+  height: auto;
+  background:
+    radial-gradient(1200px 500px at 50% -10%, color-mix(in srgb, var(--accent) 7%, transparent), transparent 60%),
+    linear-gradient(var(--bg-inset) 1px, transparent 1px),
+    linear-gradient(90deg, var(--bg-inset) 1px, transparent 1px),
+    var(--bg-elev);
+  background-size: 100% 100%, 40px 40px, 40px 40px, auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-1);
+}
+
+.topology-link {
+  fill: none;
+  stroke: var(--line-strong);
+  stroke-width: 2;
+  transition: stroke 150ms ease;
+}
+
+/* Links traversed by the selected packet: the ROUTING story. */
+.topology-link.path-active {
+  stroke: var(--accent);
+  stroke-width: 3.5;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 4px color-mix(in srgb, var(--accent) 70%, transparent));
+}
+
+/* Devices are drawn, not decorated: one stroke hue per kind. */
+.topology-node .node-shape {
+  fill: var(--bg-elev);
+  stroke: var(--accent);
+  stroke-width: 1.75;
+}
+
+.topology-node .node-glyph {
+  font-size: 19px;
+}
+
+.topology-node .node-label {
+  fill: var(--text);
+  font-size: 12.5px;
+  font-weight: 650;
+}
+
+.topology-node .node-sublabel {
+  fill: var(--text-dim);
+  font-family: var(--mono);
+  font-size: 10px;
+}
+
+/* Per-kind device color: host=NETWORK blue, router=ROUTING amber,
+   server=data green, switch/hub neutral infrastructure. The vector
+   glyphs above inherit these through currentColor. */
+.topology-node.kind-host .node-shape    { stroke: var(--accent); }
+.topology-node.kind-router .node-shape  { stroke: var(--warn); }
+.topology-node.kind-server .node-shape  { stroke: var(--good); }
+.topology-node.kind-switch .node-shape  { stroke: var(--line-strong); }
+.topology-node.kind-hub .node-shape     { stroke: var(--line-strong); stroke-dasharray: 3 3; }
+
+.topology-node.kind-host .device-glyph,
+.topology-node.kind-router .device-glyph,
+.topology-node .device-glyph {
+  color: var(--accent);
+}
+
+.topology-node.kind-router .device-glyph { color: var(--warn); }
+.topology-node.kind-server .device-glyph { color: var(--good); }
+.topology-node.kind-switch .device-glyph,
+.topology-node.kind-hub .device-glyph    { color: var(--text-dim); }
+
+.topology-node.clickable {
+  cursor: pointer;
+}
+
+.topology-node .node-shape {
+  transition: stroke 120ms ease;
+}
+
+/* Vector device glyphs: line art inheriting the kind hue. */
+.topology-node .device-glyph {
+  fill: none;
+  stroke: color-mix(in srgb, currentColor 92%, transparent);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.topology-node .device-glyph circle {
+  fill: color-mix(in rgb, currentColor 30%, transparent);
+  stroke: none;
+}
+
+.topology-node .device-glyph rect,
+.topology-node .device-glyph line,
+.topology-node .device-glyph path {
+  fill: none;
+}
+
+.topology-node.node-selected .node-shape {
+  stroke: var(--packet);
+  stroke-width: 3;
+}
+
+.topology-node.node-linking .node-shape {
+  stroke: var(--warn);
+  stroke-width: 3;
+  stroke-dasharray: 4 3;
+}
+
+.topology-node.node-off .node-shape {
+  stroke: var(--text-faint);
+  stroke-dasharray: 2 3;
+  opacity: 0.6;
+}
+
+.topology-node .node-off-mark {
+  fill: var(--bad);
+  font-family: var(--mono);
+  font-size: 9px;
+}
+
+/* Packets: the PACKET hue, with a soft motion aura while in
+   flight and a settled, quieter look once delivered. */
+.packet-dot circle {
+  fill: var(--packet);
+  stroke: var(--bg);
+  stroke-width: 2;
+}
+
+.packet-dot .packet-trail {
+  fill: color-mix(in srgb, var(--packet) 28%, transparent);
+  stroke: none;
+}
+
+.packet-dot text {
+  fill: #0b0f14;
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 700;
+}
+
+.packet-dot {
+  cursor: pointer;
+}
+
+.packet-dot circle:not(.packet-trail) {
+  filter: drop-shadow(0 0 6px color-mix(in srgb, var(--packet) 55%, transparent));
+}
+
+.packet-dot.selected circle:not(.packet-trail) {
+  stroke: var(--accent);
+  stroke-width: 3;
+}
+
+.packet-dot.settled circle:not(.packet-trail) {
+  opacity: 0.45;
+  filter: none;
+}
+
+/* --- Controls ---------------------------------------------- */
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.btn {
+  background: var(--bg-inset);
+  color: var(--text);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  padding: 0.42rem 0.95rem;
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: border-color 100ms ease, background 100ms ease;
+}
+
+.btn:hover:not(:disabled) {
+  border-color: var(--accent);
+  background: var(--bg-hover);
+}
+
+.btn.primary {
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.btn.primary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent-strong) 85%, var(--accent));
+  border-color: var(--accent-strong);
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn.danger {
+  color: var(--bad);
+}
+
+.btn.tiny {
+  padding: 0.1rem 0.4rem;
+  font-size: 0.7rem;
+}
+
+.speed {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--text-dim);
+  font-size: 0.85rem;
+}
+
+.speed select {
+  background: var(--bg-inset);
+  color: var(--text);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  padding: 0.28rem 0.35rem;
+  font: inherit;
+  font-size: 0.8rem;
+}
+
+/* --- Timeline ---------------------------------------------- */
+
+.timeline {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg-elev);
+  max-height: 340px;
+  overflow-y: auto;
+  box-shadow: var(--shadow-1);
+}
+
+.packet-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  padding: 0.6rem 0.7rem;
+  border-bottom: 1px solid var(--line);
+  position: sticky;
+  top: 0;
+  background: var(--bg-elev);
+  z-index: 2;
+}
+
+.chip {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  background: var(--bg-inset);
+  color: var(--text-dim);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 0.18rem 0.6rem;
+  cursor: pointer;
+  transition: color 100ms ease, border-color 100ms ease, background 100ms ease;
+}
+
+.chip:hover {
+  color: var(--text);
+  border-color: var(--line-strong);
+}
+
+.chip.selected {
+  border-color: var(--packet);
+  color: var(--text);
+  background: color-mix(in srgb, var(--packet) 14%, var(--bg-inset));
+}
+
+.scrubber {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.55rem 0.9rem 0.25rem;
+}
+
+.scrubber input[type='range'] {
+  flex: 1;
+  accent-color: var(--accent);
+}
+
+.scrubber-time {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  min-width: 110px;
+  text-align: right;
+}
+
+.event-log {
+  list-style: none;
+  margin: 0;
+  padding: 0.35rem 0 0.5rem;
+  font-family: var(--mono);
+  font-size: 0.78rem;
+}
+
+.event {
+  padding: 0 0.5rem;
+}
+
+.event-row {
+  display: flex;
+  gap: 0.75rem;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 1px solid transparent;
+  border-left: 2px solid transparent;
+  border-radius: var(--radius-sm);
+  color: inherit;
+  font: inherit;
+  padding: 0.16rem 0.45rem;
+  cursor: pointer;
+  transition: background 100ms ease;
+}
+
+.event-row:hover {
+  background: var(--bg-inset);
+}
+
+.event-row.selected {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, var(--bg-inset));
+}
+
+.event-ts {
+  color: var(--text-faint);
+  min-width: 64px;
+}
+
+/* Event kinds tell their story through the left rail:
+   tx=NETWORK out, rx=delivered, forward=ROUTING, drop=lost. */
+.event-drop .event-row   { color: var(--bad);  border-left-color: var(--bad); }
+.event-tx .event-row     { color: var(--accent); border-left-color: var(--accent); }
+.event-rx .event-row     { color: var(--good); border-left-color: var(--good); }
+.event-forward .event-row { color: var(--warn); border-left-color: var(--warn); }
+.event-proto .event-row  { color: var(--text); }
+
+.proto-badge {
+  font-family: var(--mono);
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  border-radius: 4px;
+  padding: 0.1rem 0.4rem;
+  background: var(--bg-inset);
+  border: 1px solid var(--line);
+  color: var(--accent);
+}
+
+.event-explain {
+  color: var(--text-dim);
+  font-size: 0.82rem;
+  margin-top: 0;
+}
+
+/* ============================================================
+   Inspector
+   ============================================================ */
+
+.inspector {
+  padding: 1rem;
+}
+
+.inspector.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-height: 240px;
+  height: 100%;
+  gap: 0.2rem;
+}
+
+.inspector.empty-state h3 {
+  margin: 0;
+  color: var(--text);
+}
+
+.inspector.empty-state::before {
+  content: '⌁';
+  font-family: var(--mono);
+  font-size: 1.6rem;
+  color: var(--text-faint);
+}
+
+.inspector-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  margin: -1rem -1rem 0.85rem;
+  padding: 0.85rem 1rem 0.75rem;
+  background: var(--bg-inset);
+  border-bottom: 1px solid var(--line);
+  position: sticky;
+  top: -1rem;
+  z-index: 3;
+}
+
+.inspector-header h3 {
+  margin: 0;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.segmented {
+  display: flex;
+  gap: 2px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 2px;
+}
+
+.segmented button {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  padding: 0.28rem 0.6rem;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.78rem;
+  border-radius: 4px;
+  transition: color 100ms ease, background 100ms ease;
+}
+
+.segmented button:hover {
+  color: var(--text);
+}
+
+.segmented button.active {
+  color: var(--text);
+  background: var(--bg-hover);
+  box-shadow: inset 0 0 0 1px var(--line-strong);
+}
+
+/* Packet state chip in the inspector header. */
+.badge {
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  border-radius: 4px;
+  padding: 0.12rem 0.45rem;
+  vertical-align: middle;
+  background: var(--bg-hover);
+  border: 1px solid var(--line-strong);
+  color: var(--text-dim);
+}
+
+.badge-delivered { color: var(--good); border-color: color-mix(in srgb, var(--good) 45%, transparent); }
+.badge-dropped, .badge-expired { color: var(--bad); border-color: color-mix(in srgb, var(--bad) 45%, transparent); }
+.badge-in-flight { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 45%, transparent); }
+
+/* Protocol layers: one hue per protocol (see token registry). */
+.protocol-badge {
+  font-family: var(--mono);
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  border-radius: 4px;
+  padding: 0.16rem 0.45rem;
+  min-width: 74px;
+  text-align: center;
+  color: var(--proto-on);
+}
+
+.badge-ethernet { background: var(--proto-ethernet); }
+.badge-arp      { background: var(--proto-arp); }
+.badge-ipv4     { background: var(--proto-ipv4); }
+.badge-tcp      { background: var(--proto-tcp); }
+.badge-udp      { background: var(--proto-udp); }
+.badge-dns      { background: var(--proto-dns); }
+.badge-http     { background: var(--proto-http); }
+.badge-icmp     { background: var(--proto-icmp); }
+
+.layers {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.layer {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  margin-bottom: 0;
+  overflow: hidden;
+  background: var(--bg-elev);
+}
+
+.layer-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  background: var(--bg-inset);
+  border: none;
+  color: var(--text);
+  padding: 0.5rem 0.65rem;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.layer-toggle:hover {
+  background: var(--bg-hover);
+}
+
+.layer-summary {
+  flex: 1;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.field-list {
+  margin: 0;
+  padding: 0.4rem 0.75rem 0.6rem;
+}
+
+.field {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.2rem 0;
+  border-bottom: 1px dashed var(--line);
+}
+
+.field:last-child {
+  border-bottom: none;
+}
+
+.field dt {
+  color: var(--text-dim);
+  font-size: 0.8rem;
+}
+
+.field dd {
+  margin: 0;
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  text-align: right;
+  word-break: break-all;
+}
+
+.raw-view pre {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 0.75rem;
+  font-size: 0.72rem;
+  line-height: 1.5;
+  overflow-x: auto;
+  margin: 0 0 0.5rem;
+}
+
+.copy-btn {
+  background: var(--bg-inset);
+  border: 1px solid var(--line-strong);
+  color: var(--text-dim);
+  border-radius: var(--radius-sm);
+  padding: 0.28rem 0.7rem;
+  font: inherit;
+  font-size: 0.76rem;
+  cursor: pointer;
+  margin-bottom: 0.5rem;
+  transition: color 100ms ease, border-color 100ms ease;
+}
+
+.copy-btn:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.explain-view section {
+  margin-bottom: 0.9rem;
+}
+
+.explain-view h4 {
+  color: var(--accent);
+  font-size: 0.85rem;
+}
+
+.explain-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.explain-head h4 {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.explain-head .copy-btn {
+  margin-bottom: 0;
+}
+
+.explain-view ul {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: var(--text-dim);
+}
+
+.explain-view li {
+  margin-bottom: 0.2rem;
+}
+
+.explain-intro {
+  color: var(--text-faint);
+  font-size: 0.78rem;
+  font-style: italic;
+}
+
+.path-highlight ol {
+  margin: 0.25rem 0 0;
+  padding-left: 1.2rem;
+  font-family: var(--mono);
+  font-size: 0.74rem;
+  color: var(--text-dim);
+}
+
+.path-highlight h4 {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-faint);
+  margin-bottom: 0.1rem;
+}
+
+.hop-times {
+  color: var(--text-faint);
+}
+
+/* ============================================================
+   Lab detail — the LEARNING surface
+   ============================================================ */
+
+.lab-detail header .objective {
+  color: var(--text-dim);
+  margin-top: 0;
+  max-width: 70ch;
+}
+
+.lab-steps {
+  padding-left: 1.3rem;
+}
+
+.lab-steps li {
+  margin-bottom: 0.4rem;
+}
+
+.lab-steps li.reached {
+  color: var(--good);
+}
+
+.lab-task {
+  border-left: 3px solid var(--accent);
+  background: var(--bg-inset);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  padding: 0.75rem 1rem;
+}
+
+.lab-task h3 {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--accent);
+}
+
+.hints {
+  color: var(--text-dim);
+}
+
+.lab-detail .lab-section {
+  margin: 1.1rem 0;
+}
+
+.lab-detail .lab-section h3 {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--text-faint);
+  margin-bottom: 0.4rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.lab-detail .lab-section > :not(h3) {
+  color: var(--text-dim);
+}
+
+.lab-detail .lab-section ul,
+.lab-detail .lab-section ol {
+  margin: 0;
+  padding-left: 1.3rem;
+}
+
+.lab-detail .lab-section li {
+  margin-bottom: 0.3rem;
+}
+
+.lab-detail .lab-controls-list {
+  color: var(--text-dim);
+}
+
+.lab-reveal {
+  font-size: 0.68rem;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--text-dim);
+  background: var(--bg-inset);
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  padding: 0.12rem 0.65rem;
+  cursor: pointer;
+  transition: color 100ms ease, border-color 100ms ease;
+}
+
+.lab-reveal:hover {
+  color: var(--text);
+  border-color: var(--accent);
+}
+
+.lab-complete-banner {
+  background: color-mix(in srgb, var(--good) 13%, transparent);
+  border: 1px solid color-mix(in srgb, var(--good) 55%, transparent);
+  color: var(--good);
+  border-radius: var(--radius);
+  padding: 0.5rem 0.8rem;
+  font-weight: 600;
+}
+
+.lab-completion .completion-met {
+  color: var(--good);
+  font-weight: 600;
+}
+
+.lab-completion .completion-unmet {
+  color: var(--text-dim);
+}
+
+.lab-number-badge {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 0.66rem;
+  font-weight: 600;
+  color: var(--accent);
+  border: 1px solid color-mix(in srgb, var(--accent) 60%, transparent);
+  border-radius: 999px;
+  padding: 0.08em 0.6em;
+  margin-right: 0.5em;
+  vertical-align: 2px;
+  letter-spacing: 0.05em;
+}
+
+/* --- Empty states ------------------------------------------ */
+
+.empty-state {
+  padding: 1.75rem 1.5rem;
+  color: var(--text-dim);
+  text-align: center;
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--bg-inset) 55%, transparent);
+}
+
+.empty-state h2,
+.empty-state h3 {
+  color: var(--text);
+}
+
+.inspector.empty-state {
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius);
+  background: color-mix(in srgb, var(--bg-inset) 55%, transparent);
+}
+
+.timeline.empty-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 64px;
+  color: var(--text-faint);
+  font-size: 0.85rem;
+}
+
+.timeline.empty-state p {
+  margin: 0;
+}
+
+.muted {
+  color: var(--text-dim);
+  font-size: 0.8rem;
+}
+
+/* ============================================================
+   Topology editor
+   ============================================================ */
+
+.editor-panel {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.editor-panel h3 {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.palette {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.editor-errors .error-line,
+.editor-validation .error-line {
+  font-size: 0.78rem;
+  color: var(--bad);
+  margin: 0.2rem 0;
+}
+
+.editor-validation h4 {
+  margin: 0 0 0.25rem;
+  font-size: 0.72rem;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.editor-ok {
+  color: var(--good);
+  font-size: 0.82rem;
+  margin: 0;
+}
+
+.device-props {
+  border-top: 1px solid var(--line);
+  padding-top: 0.75rem;
+}
+
+.device-props h4 {
+  margin: 0 0 0.5rem;
+  font-size: 0.9rem;
+}
+
+.prop-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.6rem;
+}
+
+.iface-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.74rem;
+  margin-bottom: 0.6rem;
+}
+
+.iface-table th,
+.iface-table td {
+  text-align: left;
+  padding: 0.22rem 0.3rem;
+  border-bottom: 1px dashed var(--line);
+}
+
+.iface-table .mono {
+  font-family: var(--mono);
+  font-size: 0.68rem;
+}
+
+.ip-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.ip-form h5 {
+  width: 100%;
+  margin: 0.25rem 0 0.1rem;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-faint);
+}
+
+.ip-form input,
+.ip-form select {
+  background: var(--bg-inset);
+  border: 1px solid var(--line-strong);
+  color: var(--text);
+  border-radius: var(--radius-sm);
+  padding: 0.28rem 0.45rem;
+  font: inherit;
+  font-size: 0.8rem;
+}
+
+.ip-form input {
+  flex: 1;
+  min-width: 110px;
+  font-family: var(--mono);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* ============================================================
+   Data panels: ARP/MAC cache, routing, DNS, HTTP, journey
+   ============================================================ */
+
+.cache-panel {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg-elev);
+  padding: 0.75rem 1rem;
+  box-shadow: var(--shadow-1);
+}
+
+.cache-panel h3 {
+  margin: 0 0 0.2rem;
+  font-size: 0.9rem;
+}
+
+.panel-hint {
+  margin: 0 0 0.5rem;
+  font-size: 0.75rem;
+}
+
+.cache-section {
+  margin-bottom: 0.6rem;
+}
+
+.cache-section h4 {
+  margin: 0.2rem 0;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-faint);
+}
+
+.cache-node {
+  display: flex;
+  gap: 0.6rem;
+  align-items: baseline;
+  padding: 0.12rem 0;
+  flex-wrap: wrap;
+}
+
+.cache-node-name {
+  font-weight: 600;
+  font-size: 0.82rem;
+  min-width: 110px;
+}
+
+.cache-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 0.76rem;
+}
+
+.cache-list li {
+  padding: 0.05rem 0;
+}
+
+.cache-empty {
+  font-size: 0.75rem;
+}
+
+.cache-ts {
+  font-size: 0.68rem;
+  margin-left: 0.3rem;
+}
+
+/* Routing tables: the ROUTING decision rendered as data. */
+.route-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 4px 0 8px;
+  font-size: 0.8rem;
+}
+
+.route-table th,
+.route-table td {
+  text-align: left;
+  padding: 3px 8px;
+  border-bottom: 1px solid var(--line);
+}
+
+.route-table thead th {
+  color: var(--text-faint);
+  font-weight: 600;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.route-table tbody th[scope='row'] {
+  color: var(--text-dim);
+  font-weight: 500;
+  white-space: nowrap;
+  width: 40%;
+}
+
+.route-table tr.route-winner td {
+  background: color-mix(in srgb, var(--good) 15%, transparent);
+  font-weight: 600;
+}
+
+/* DNS */
+.dns-flow {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  font-size: 0.8rem;
+}
+
+.dns-flow li {
+  margin-bottom: 3px;
+}
+
+.dns-flow .mono {
+  margin-right: 6px;
+  font-size: 0.72rem;
+}
+
+.dns-flow-hit  { color: var(--good); }
+.dns-flow-miss { color: var(--warn); }
+.dns-flow-fail { color: var(--bad); }
+
+.dns-expired {
+  opacity: 0.55;
+  text-decoration: line-through;
+}
+
+/* HTTP */
+.http-body {
+  margin: 0;
+  padding: 4px 8px;
+  font-size: 0.75rem;
+  background: var(--bg-inset);
+  border-radius: 4px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* Flagship: URL bar, journey, protocol stack */
+.url-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+.url-bar input[type='text'] {
+  flex: 1;
+  min-width: 220px;
+  max-width: 420px;
+  padding: 6px 10px;
+  font-size: 0.9rem;
+  font-family: var(--mono);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: var(--bg-inset);
+  color: var(--text);
+}
+
+.url-bar input[type='text']:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.url-error {
+  color: var(--bad);
+  font-size: 0.8rem;
+}
+
+.url-hint {
+  font-size: 0.8rem;
+}
+
+.journey-stages {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.journey-stage {
+  border-left: 3px solid var(--line-strong);
+  padding: 4px 0 4px 12px;
+  margin-bottom: 8px;
+  opacity: 0.55;
+}
+
+.journey-stage.current {
+  border-left-color: var(--good);
+  opacity: 1;
+}
+
+.journey-stage.done {
+  border-left-color: var(--accent);
+  opacity: 0.9;
+}
+
+.journey-stage.pending {
+  opacity: 0.35;
+}
+
+.journey-title {
+  font-weight: 600;
+}
+
+.journey-answers {
+  margin: 6px 0 0;
+  font-size: 0.8rem;
+}
+
+.journey-answers dt {
+  font-weight: 600;
+  color: var(--text-dim);
+  margin-top: 4px;
+}
+
+.journey-answers dd {
+  margin: 0 0 0 12px;
+}
+
+/* Protocol stack: PROTOCOL layering made visible; each edge
+   reuses that protocol's hue. */
+.stack-layers {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.stack-layer {
+  border: 1px solid var(--line-strong);
+  border-left-width: 3px;
+  border-radius: var(--radius-sm);
+  padding: 4px 8px;
+  background: var(--bg-inset);
+}
+
+.stack-http     { border-left-color: var(--proto-http); }
+.stack-tcp      { border-left-color: var(--proto-tcp); }
+.stack-ipv4     { border-left-color: var(--proto-ipv4); }
+.stack-ethernet { border-left-color: var(--proto-ethernet); }
+
+.stack-name {
+  font-weight: 700;
+  font-size: 0.76rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-dim);
+}
+
+.frame-rewrite {
+  margin-top: 10px;
+  border: 1px solid color-mix(in srgb, var(--packet) 50%, transparent);
+  border-radius: var(--radius-sm);
+  padding: 6px 8px;
+  background: color-mix(in srgb, var(--packet) 7%, transparent);
+}
+
+.frame-rewrite h4 {
+  margin: 0 0 6px;
+  font-size: 0.8rem;
+}
+
+/* ============================================================
+   Status bar — the instrument strip
+   ============================================================ */
+
+.status-bar {
+  display: flex;
+  align-items: center;
+  gap: 1.1rem;
+  padding: 0.32rem 1.25rem;
+  border-top: 1px solid var(--line);
+  background: var(--bg-elev);
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  position: sticky;
+  bottom: 0;
+  z-index: 4;
+}
+
+.status-item strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-faint);
+  flex: 0 0 auto;
+}
+
+.status-dot.status-running {
+  background: var(--warn);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--warn) 60%, transparent);
+}
+
+.status-dot.status-done {
+  background: var(--good);
+  box-shadow: 0 0 6px color-mix(in srgb, var(--good) 60%, transparent);
+}
+
+.status-spacer {
+  flex: 1;
+}
+
+.theme-toggle {
+  background: transparent;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  color: var(--text-dim);
+  font: inherit;
+  font-size: 0.7rem;
+  padding: 0.15rem 0.55rem;
+  cursor: pointer;
+}
+
+.theme-toggle:hover {
+  color: var(--text);
+  border-color: var(--accent);
+}
+
+/* ============================================================
+   Lab progress panel
+   ============================================================ */
+
+.progress-panel {
+  border-top: 1px solid var(--line);
+  padding: 0.5rem 0.5rem 1rem;
+}
+
+.progress-panel h3 {
+  padding: 0.5rem 0.5rem 0.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.progress-count {
+  font-family: var(--mono);
+  color: var(--accent);
+  letter-spacing: 0;
+}
+
+.progress-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.progress-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  color: var(--text-dim);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  padding: 0.26rem 0.5rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: background 100ms ease, color 100ms ease;
+}
+
+.progress-item:hover {
+  background: var(--bg-inset);
+  color: var(--text);
+}
+
+.progress-item.active {
+  border-color: var(--accent);
+  color: var(--text);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+
+.progress-item.done .progress-title {
+  color: var(--good);
+}
+
+.progress-marker {
+  font-family: var(--mono);
+  color: var(--text-faint);
+  flex: 0 0 auto;
+}
+
+.progress-item.done .progress-marker {
+  color: var(--good);
+}
+
+.progress-badge {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 0.66rem;
+  color: var(--accent);
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  padding: 0 0.45em;
+  margin-right: 0.4em;
+}
+
+.progress-clear {
+  margin-top: 0.6rem;
+  background: transparent;
+  color: var(--text-dim);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  padding: 0.2rem 0.6rem;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.progress-clear:hover {
+  color: var(--bad);
+  border-color: var(--bad);
+}
+
+/* ============================================================
+   Responsive behavior
+   ============================================================ */
+
+@media (min-width: 1600px) {
+  .app-body {
+    grid-template-columns: 280px minmax(0, 1fr) 400px;
+  }
+}
+
+@media (max-width: 1280px) {
+  .app-body {
+    grid-template-columns: 220px minmax(0, 1fr) 320px;
+  }
+}
+
+@media (max-width: 1100px) {
+  .app-body {
+    grid-template-columns: 200px minmax(0, 1fr);
+  }
+  .inspector-pane {
+    grid-column: 1 / -1;
+    border-left: none;
+    border-top: 1px solid var(--line);
+    position: static;
+    max-height: none;
+  }
+  .sidebar {
+    position: static;
+    max-height: none;
+  }
+}
+
+@media (max-width: 860px) {
+  .app-body {
+    grid-template-columns: 1fr;
+  }
+  .sidebar {
+    border-right: none;
+    border-bottom: 1px solid var(--line);
+  }
+  .lab-nav ul {
+    flex-direction: row;
+    flex-wrap: wrap;
+    padding: 0.4rem;
+  }
+  .lab-nav-group {
+    display: contents;
+  }
+  .lab-link {
+    width: auto;
+    border-left: 1px solid transparent;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 0.3rem 0.75rem;
+    align-items: center;
+  }
+  .lab-link.active {
+    border-color: var(--accent);
+  }
+  .lab-link .lab-protocols {
+    display: none;
+  }
+  .main {
+    padding: 0.85rem;
+  }
+  .controls .btn {
+    padding: 0.4rem 0.7rem;
+  }
+  .status-bar {
+    gap: 0.7rem;
+    flex-wrap: wrap;
+  }
+  .app-header {
+    padding: 0.6rem 0.85rem;
+    gap: 0.5rem;
+  }
+  .tagline {
+    display: none;
+  }
+}
+
+/* Large-type protocol data stays readable on narrow panes. */
+@media (max-width: 480px) {
+  .field {
+    flex-direction: column;
+    gap: 0.1rem;
+  }
+  .field dd {
+    text-align: left;
+  }
+}
+
+/* ============================================================
+   Motion discipline: the simulation itself animates the dots;
+   chrome transitions stay small and dismissible.
+   ============================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
