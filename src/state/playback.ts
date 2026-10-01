@@ -8,7 +8,6 @@
  * and no animation state live here.
  */
 
-import type { NetworkState } from '../models/network-state';
 import type { Packet } from '../models/packet';
 import type { SimulationEvent } from '../models/events';
 
@@ -40,14 +39,6 @@ export function nextEventTime(events: readonly SimulationEvent[], cursor: number
 /** Events visible at a given cursor position (ts <= cursor). */
 export function visibleEvents(events: readonly SimulationEvent[], cursor: number): readonly SimulationEvent[] {
   return events.filter((e) => e.ts <= cursor);
-}
-
-/** Packets that exist at the cursor (created, not yet expired). */
-export function visiblePackets(state: NetworkState, cursor: number): readonly Packet[] {
-  return state.packets.filter((p) => {
-    const born = p.hops[0]?.startMs ?? p.bornMs;
-    return born <= cursor;
-  });
 }
 
 /** A packet is mid-flight when the cursor is inside one of its hops. */

@@ -6,11 +6,9 @@
  * inspectable: clicking one opens it in the inspector pane.
  */
 
-import { useMemo } from 'react';
 import { useApp } from '../state/store';
 import { describeEvent, eventKind } from '../models/events';
 import { packetProtocolLabel, packetSummary } from '../models/packet';
-import { eventTimes } from '../state/playback';
 
 export function Timeline() {
   const state = useApp((s) => s.state);
@@ -21,8 +19,6 @@ export function Timeline() {
   const selectedEventIndex = useApp((s) => s.selectedEventIndex);
   const selectEvent = useApp((s) => s.selectEvent);
 
-  const times = useMemo(() => (state === null ? [] : eventTimes(state.events)), [state]);
-
   if (state === null) {
     return (
       <div className="timeline empty-state">
@@ -32,7 +28,10 @@ export function Timeline() {
   }
 
   const visible = state.events.filter((e) => e.ts <= cursorMs);
-  const maxTs = times.length > 0 ? (times[times.length - 1] ?? 0) : 0;
+  // The cursor ranges over the whole simulated duration — which can extend
+  // past the last event's timestamp while timers wind down — so scrub over
+  // state.simMs rather than the final event time.
+  const maxTs = Math.max(state.simMs, 1);
 
   return (
     <div className="timeline" aria-label="Simulation timeline">

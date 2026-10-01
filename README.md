@@ -252,7 +252,7 @@ To run it locally instead:
 
 ```bash
 npm install
-npm run dev       # http://localhost:5173
+npm run dev       # http://localhost:5173/Network-Protocol-Visual-Lab/
 ```
 
 ## 17. Educational use

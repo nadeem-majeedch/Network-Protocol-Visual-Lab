@@ -40,6 +40,13 @@ jobs:
       - name: Build
         run: npm run build
 
+      # Provisions the Pages site on the very first successful run
+      # (Source: GitHub Actions). Harmless no-op on later runs.
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:

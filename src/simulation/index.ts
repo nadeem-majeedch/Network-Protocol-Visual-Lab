@@ -1,6 +1,5 @@
 export * from './context';
 export * from './stack';
-export * from './ethernet';
 export * from './arp';
 export * from './ip';
 export * from './tcp';

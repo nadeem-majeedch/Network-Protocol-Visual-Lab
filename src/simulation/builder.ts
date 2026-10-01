@@ -14,7 +14,6 @@ import type { HttpMessage } from '../models/http';
 import type { Packet, PacketHop } from '../models/packet';
 import type { Ipv4Address } from '../models/ipv4';
 import type { MacAddress } from '../models/mac';
-import { mac as makeMac } from '../models/mac';
 
 let nextSerial = 1;
 let nextId = 1;
@@ -185,5 +184,3 @@ export function buildHttpResponse(
 export function makeHop(linkId: string, from: string, to: string, startMs: number, endMs: number): PacketHop {
   return { linkId, fromInterface: from, toInterface: to, startMs, endMs };
 }
-
-export const LOOPBACK_MAC = makeMac('02:00:00:00:ff:ff');
